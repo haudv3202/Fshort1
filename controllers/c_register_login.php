@@ -5,23 +5,40 @@ class c_register_login {
     protected $account;
     function __construct(){
         $this->account = new m_account();
+        require_once ("mail/SendMail.php");
     }
 
     public function index() {
         require_once ('google/config.php');
+        if(isset($_POST['resgister'])){
+            $username = $this->checkData('username');
+            $email = $this->checkData('email');
+            $password = $this->checkData('password');
+            $ress_pass = $this->checkData('re_pass');
+            if($password == $ress_pass){
+                $token = substr(rand(0,999999),0,6);
+                $title = "Token password";
+                $content = "Your verification code is " . "<b>$token</b>";
+                $result_mail = send_token($title,$content, $email);
+                $_SESSION['token_check'] = $token;
+                $_SESSION['username'] =  $username;
+                $_SESSION['email'] = $email;
+                $_SESSION['password'] = $password;
+                header("location:token_pass.php");
+            }
+        }
         $view = "views/resgister_login/v_register.php";
         include ("templates/login_register/layout.php");
     }
 
     public function login(){
-
         $view = "views/resgister_login/v_login.php";
         include ("templates/login_register/layout.php");
     }
 
     public function token_verification(){
         require_once ('google/config.php');
-        require_once ("mail/SendMail.php");
+
         if (isset($_GET['code'])) {
             $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
             $client->setAccessToken($token['access_token']);
@@ -53,10 +70,18 @@ class c_register_login {
         if(isset($_POST['token_submit'])){
             $user_token = $this->checkData('token');
             if(!empty($user_token)){
-                if($user_token == $_SESSION['userinfo']['token_check']){
+                if($user_token == $_SESSION['userinfo']['token_check']  ){
                     $_SESSION["success"] = 'Thành công vui lòng nhập mật khẩu';
                     header('Location:change_password.php');
-                }else {
+                }else if($user_token == $_SESSION['token_check']){
+                    $_SESSION["success"] = 'Chúc mừng bạn tạo tài khoản thành công';
+                    $result = $this->account->add_account($_SESSION['username'],$_SESSION['email'],$_SESSION['password'],NULL);
+                    if($result){
+                        header('location:index.php');
+                    }else {
+                        echo 'Lỗi ';
+                    }
+                } else {
                     $_SESSION["error"] = 'Token sai';
                 }
             }

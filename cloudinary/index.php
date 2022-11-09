@@ -34,10 +34,6 @@ Configuration::instance([
             'eager_notification_url' => 'https://mysite.example.com/notify_endpoint']
           );
           
-          echo "<pre>";
-          print_r($data);
-          die();
-        
     }
 
 ?>
